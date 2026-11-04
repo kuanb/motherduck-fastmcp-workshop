@@ -140,6 +140,25 @@ def count_requests(
 
 
 @mcp.tool(annotations={"readOnlyHint": True})
+def requests_by_hour(
+    service: str | None = None,
+    neighborhood: str | None = None,
+) -> dict:
+    """Count 311 requests by the hour of day they were opened, in San Francisco local time.
+
+    Returns {"busiest_hour": h, "counts": {"0": n, ..., "23": n}} with all 24
+    hours, including zeros; busiest_hour is the hour with the most requests
+    (the earliest hour wins a tie) or null if nothing matches. Use this for
+    "what time of day" or "which hour" questions. For totals or breakdowns
+    by neighborhood, service, source, or weekday, use count_requests.
+    service and neighborhood must be exact names from dataset_info.
+    """
+    counts = Counter(r.opened.hour for r in _matching(service, neighborhood))
+    busiest = max(range(24), key=lambda h: (counts[h], -h)) if counts else None
+    return {"busiest_hour": busiest, "counts": {str(h): counts[h] for h in range(24)}}
+
+
+@mcp.tool(annotations={"readOnlyHint": True})
 def median_close_hours(
     service: str | None = None,
     group_by: MedianGroup | None = None,
